@@ -2,14 +2,15 @@
 #include<string>
 #include<functional>
 #include<unordered_map>
-#include"yaml-cpp/yaml.h"
 #include"Alias.h"
 #include<vector>
 #include<unordered_map>
 #include<map>
 #include<queue>
 #include<list>
+#include"yaml-cpp/yaml.h"
 #include"TypeID.h"
+#include"Dscp.h"
 
 namespace LuRef {
 	class SharedObject;
@@ -25,7 +26,13 @@ namespace LuRef {
 		static const Serialization* FindSer(size_t hashCode);
 		static const Serialization* FindSer(const std::string& alias);
 		static void Serialize(YAML::Node&, Object&);
+		static void Serialize(YAML::Node&, SharedObject&);
+		template<typename T>
+		static void SerializeWithData(YAML::Node&, T*);
+		static void Deserialize(YAML::Node&, Object&);
 		static void Deserialize(YAML::Node&, SharedObject&);
+		template<typename T>
+		static void DeserializeWithData(YAML::Node&, T*);
 	private:
 		static void PushSerialization(size_t hashCode, Serialization);
 		
@@ -99,6 +106,20 @@ namespace LuRef {
 		static const constexpr bool value =
 			is_imp_by_yaml<T>::value;
 	};
+
+	template<typename T>
+	inline void SerializationManager::SerializeWithData(YAML::Node& node, T* data){
+		auto t = ClassManager::FindClass(*ClassAlias::Find(STypeID<T>::hashID))
+			->MakeWithData(static_cast<void*>(data));
+		Serialize(node,*t);
+	}
+
+	template<typename T>
+	inline void SerializationManager::DeserializeWithData(YAML::Node& node, T* data){
+		auto t = ClassManager::FindClass(*ClassAlias::Find(STypeID<T>::hashID))
+			->MakeWithData(static_cast<void*>(data));
+		Deserialize(node, *t);
+	}
 
 }
 

@@ -325,6 +325,9 @@ void test3() {
 	auto serVec = LuRef::ClassManager::FindClass("Vec")->MakeWithData(vec->As<Vec>());
 	LuRef::SerializationManager::Serialize(vecSubnode, *serVec);
 
+	auto data_vec = node["data_vec"];
+	Vec* vec_data = new Vec{ 1,1 };
+	LuRef::SerializationManager::SerializeWithData(data_vec, vec_data);
 
 	std::ofstream os("output.yaml");
 	YAML::Emitter emitter;
@@ -332,6 +335,16 @@ void test3() {
 	os << emitter.c_str();
 }
 
+//测试反序列化系统
+void test4() {
+	YAML::Node node = YAML::LoadFile("./output.yaml");
+	Vec vec;
+	vec.tail.subs.clear();
+	vec.x = -1000;
+	vec.y = -1000;
+	auto data = node["data_vec"];
+	LuRef::SerializationManager::DeserializeWithData(data, &vec);
+}
 
 
 
@@ -339,7 +352,7 @@ int main() {
 	Vec(Vec:: * ptr)(int) = &Vec::normal;
 	Register();
 	Register__();
-	test3();
+	test4();
 
 	//test2();
 }

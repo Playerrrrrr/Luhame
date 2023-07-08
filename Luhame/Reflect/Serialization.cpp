@@ -24,11 +24,21 @@ namespace LuRef {
 		it->second.serialize(node, &obj);
 	}
 
-	void SerializationManager::Deserialize(YAML::Node& node, SharedObject& obj){
+	void SerializationManager::Serialize(YAML::Node& node, SharedObject& obj){
+		auto obj_ = obj.dscp.MakeWithData(obj.As<void>());
+		Serialize(node, *obj_);
+	}
+
+	void SerializationManager::Deserialize(YAML::Node& node, Object& obj){
 		auto it = serMap.find(obj.dscp.type.hashID);
 		if (it == serMap.end())
 			throw std::exception{"bad deserialize"};
 		it->second.deserialize(node, &obj);
+	}
+
+	void SerializationManager::Deserialize(YAML::Node& node, SharedObject& obj){
+		auto obj_ = obj.dscp.MakeWithData(obj.As<void>());
+		Deserialize(node, *obj_);
 	}
 
 	void SerializationManager::PushSerialization(size_t hashCode, const Serialization ser){

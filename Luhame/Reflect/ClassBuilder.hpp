@@ -232,7 +232,7 @@ namespace LuRef {
 	inline void ClassBuilder<DT, Deriveds...>::BuildeSerialization(){
 		Serialization ser;
 		//如果为登记类，则用动态的方法构建
-		std::cout << "construct serialization function for: " << STypeID<T>::strID << std::endl;
+		std::cout << "construct serialization and deserialization function for: " << STypeID<T>::strID << std::endl;
 		if (ClassAlias::Find(STypeID<T>::hashID)) {
 			ser.serialize = [](YAML::Node& node, const void* data) {
 				const Object* obj = static_cast<const Object*>(data);
@@ -260,6 +260,33 @@ namespace LuRef {
 				}
 				//遍历字段
 			};
+
+			ser.deserialize = [](const YAML::Node& node, void* data) {
+				const Object* obj = static_cast<const Object*>(data);
+				auto& fields = obj->fieldInstance;
+				for (auto& t : fields) {
+					const Serialization* fieldSer = SerializationManager::FindSer(t->dscp.type.hashID);
+					if (fieldSer == nullptr || fieldSer->serialize == nullptr)
+						throw std::exception{(obj->dscp.alias + "." + t->dscp.alias + " have not serialization function").c_str()};
+					YAML::Node subNode = node[t->dscp.alias];
+					if (!subNode)//该字段在对象中不存在
+						throw std::exception{"bad serialize"};
+					void* fieldData;
+					if (ClassAlias::Find(t->dscp.type.hashID)) {
+						auto classDscpOf_t = IDRegistry::NameOf(t->dscp.type.hashID);
+						if (!classDscpOf_t)
+							throw std::exception{"bad serialize"};
+						fieldData = ClassManager::FindClass(
+							*classDscpOf_t
+						)->MakeWithData(t->data);
+					}
+					else
+						fieldData = t->data;
+					fieldSer->deserialize(subNode, fieldData);
+				}
+				return true;
+			};
+
 		}
 		else {//如果为非登记类，那么看是否yaml是否支持
 
@@ -269,8 +296,20 @@ namespace LuRef {
 				const T& data_ = *static_cast<const T*>(data);
 				node = YAML::convert<T>::encode(data_);
 			};
+
+			ser.deserialize = [](const YAML::Node& node, void* data) {
+				if (!data)
+					throw std::exception{"the data ptr that is serialized is nullptr"};
+				T& data_ = *static_cast<T*>(data);
+				YAML::convert<T>::decode(node, data_);
+				return true;
+			};
 		}
 		SerializationManager::PushSerialization(STypeID<T>::hashID, ser);
+
+
+		//构建反序列化
+		
 	}
 
 }
@@ -279,6 +318,7 @@ namespace LuRef {
 
 namespace YAML {
 	//要不要把yaml对接到SerializationManger？？？
+	//对接好了
 	template <typename T>
 	struct convert {
 		static bool flag() { return true; }
@@ -314,7 +354,24 @@ namespace YAML {
 				FindSer(::LuRef::STypeID<T>::hashID);
 			if (!serPtr)
 				throw std::exception{"bad decode"};
-			return serPtr->deserialize(node, &rhs);
+			//可能传入的是一个对象，要判别一下
+			void* fieldData;
+			if (::LuRef::ClassAlias::Find(::LuRef::STypeID<T>::hashID)) {
+				auto classDscpOf_T = ::LuRef::IDRegistry::NameOf(::LuRef::STypeID<T>::hashID);
+				if (!classDscpOf_T)
+					throw std::exception{"bad serialize"};
+				fieldData = LuRef::ClassManager::FindClass(
+					*classDscpOf_T
+				)->MakeWithData((void*)(&rhs));
+				//这边强制const T* -> void*也是没办法的事情
+				//Object要求内部指针是非常量的，我们也不会
+				//我们也可以保证在该段不会对rhs进行修改所以...
+				//千万别在这里出bug！！！！！
+			}
+			else
+				fieldData = &rhs;
+
+			return serPtr->deserialize(node, fieldData);
 		}
 	};
 }
