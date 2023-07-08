@@ -40,3 +40,24 @@
 				，MethodDscp是将对象指针转型
 				[字段 : T Base::* -> T Derived::* ,
 				 函数 : C* -> Derived];
+
+
+2 ：2023.7.8.10.39 ：家里的椅子上，git啥的，真让人摸不清头脑 ：none : none
+	problem		: 创建在github上git仓库，本地的仓库提交不上去...
+
+	reson		：大概率是网络的问题
+
+	resolution  ：本地git上用这两行代码：git config --global https.proxy
+										 git config --global --unset https.proxy
+				  然后用梯子挂台湾，然后fastgithub启动，要不然都连不上github
+
+
+
+3 ：2023.7.8.11.37 ：家里的椅子上，老妈叫吃饭了，赶紧写！：Yaml：general
+	problem	   ：构建yaml环境
+
+	reason     ：----
+
+	resolution ：先在Luhame中创建项目Yaml，在项目文件中拉取yaml-cpp的源码，
+				 包含文件后编译成lib，在luhame项目中包含Yaml的include文件
+				 ，并将生成的lib文件导入luhame中即可

@@ -39,6 +39,9 @@
     <ClCompile Include="Readme.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="Reflect\Serialization.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Reflect\Util.hpp">
@@ -51,6 +54,12 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Reflect\Alias.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Reflect\Serialization.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Reflect\ClassBuilder.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,0 +1,41 @@
+cat:
+  color: red
+  hp: 200
+  name: bob
+  x: 1
+  y: 1
+vec:
+  x: 876942400
+  y: 10086
+  tail:
+    id: 0
+    name: defalut
+    subs:
+      - map:
+          1:
+            name: Subsub0
+          3:
+            name: Subsub2
+          5:
+            name: Subsub4
+          7:
+            name: Subsub6
+      - map:
+          9:
+            name: Subsub8
+          11:
+            name: Subsub10
+          13:
+            name: Subsub12
+          15:
+            name: Subsub14
+      - map:
+          17:
+            name: Subsub16
+          19:
+            name: Subsub18
+          21:
+            name: Subsub20
+          23:
+            name: Subsub22
+    k: 0

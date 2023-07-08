@@ -2,6 +2,8 @@
 #include"TypeID.h"
 #include<functional>
 #include<iostream>
+#include"yaml-cpp/node/convert.h"
+
 namespace LuRef {
 
 #define LU_LOG_WARN(x)\
@@ -86,4 +88,8 @@ namespace LuRef {
 	struct IsMemberFun <const T(*)(Args...)> {
 		inline static const constexpr bool value = false;
 	};
+
+
+
+
 }

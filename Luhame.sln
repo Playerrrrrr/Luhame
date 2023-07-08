@@ -5,6 +5,8 @@ VisualStudioVersion = 17.6.33815.320
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Luhame", "Luhame\Luhame.vcxproj", "{F3EA1D65-26C2-4DAB-ADDA-46EB8D92CD7C}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Yaml", "Yaml\Yaml.vcxproj", "{16E4C316-E4B9-42B2-AD14-76988A641FC5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -21,6 +23,14 @@ Global
 		{F3EA1D65-26C2-4DAB-ADDA-46EB8D92CD7C}.Release|x64.Build.0 = Release|x64
 		{F3EA1D65-26C2-4DAB-ADDA-46EB8D92CD7C}.Release|x86.ActiveCfg = Release|Win32
 		{F3EA1D65-26C2-4DAB-ADDA-46EB8D92CD7C}.Release|x86.Build.0 = Release|Win32
+		{16E4C316-E4B9-42B2-AD14-76988A641FC5}.Debug|x64.ActiveCfg = Debug|x64
+		{16E4C316-E4B9-42B2-AD14-76988A641FC5}.Debug|x64.Build.0 = Debug|x64
+		{16E4C316-E4B9-42B2-AD14-76988A641FC5}.Debug|x86.ActiveCfg = Debug|Win32
+		{16E4C316-E4B9-42B2-AD14-76988A641FC5}.Debug|x86.Build.0 = Debug|Win32
+		{16E4C316-E4B9-42B2-AD14-76988A641FC5}.Release|x64.ActiveCfg = Release|x64
+		{16E4C316-E4B9-42B2-AD14-76988A641FC5}.Release|x64.Build.0 = Release|x64
+		{16E4C316-E4B9-42B2-AD14-76988A641FC5}.Release|x86.ActiveCfg = Release|Win32
+		{16E4C316-E4B9-42B2-AD14-76988A641FC5}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

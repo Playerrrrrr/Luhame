@@ -1,7 +1,11 @@
 #include"Reflect/Util.hpp"
 #include"Reflect/Dscp.h"
 #include<iostream>
-
+#include"yaml-cpp/yaml.h"
+#include"Reflect/ClassBuilder.hpp"
+#include<fstream>
+#include<queue>
+#include<list>
 struct TestName {
 	int a;
 	static int stint;
@@ -19,10 +23,39 @@ void Traits(T res) {
 	std::cout << std::is_reference_v<T> << std::endl;
 }
 
+static int x = 0;
+
+struct Subsub {
+	std::string name = "Subsub" + std::to_string(x++);
+	Subsub(std::string name):name{name}{}
+	Subsub(){}
+	static void* Create() {
+		return new Subsub{};
+	}
+};
+
+struct Sub {
+	inline static int x = 0;
+	std::unordered_map<int, Subsub> map;
+
+	Sub() {
+		for (int i = 0; i < 4; i++) {
+			map.emplace(x++, Subsub{ "Subsub" + std::to_string(x++) });
+		}
+	}
+
+	static Sub* Create() {
+		auto res =  new Sub{};
+		res->map.emplace(x++, Subsub{ "Subsub" + std::to_string(x++) });
+		return res;
+	}
+};
+
 struct Tail {
 	std::string name = "defalut";
 	int id =0;
 	float k = 0;
+	std::vector<Sub> subs{Sub{}, Sub{}, Sub{}};
 	Tail(const Tail& oth) {
 		this->id = oth.id;
 		this->k = oth.k;
@@ -30,11 +63,16 @@ struct Tail {
 	}
 
 	Tail(){}
+
+	static void* Create() {
+		return new Tail{};
+	}
 };
 
 struct Vec {
-	float x, y;
+	float x = 0, y = 0;
 	Tail tail;
+	Vec() = default;
 	Vec(float x, float y) {
 		this->x = x, this->y = y;
 	}
@@ -123,6 +161,26 @@ struct PStr {
 };
 
 void Register(){
+
+	{
+		LuRef::ClassBuilder<Subsub> builder{"Subsub"};
+		builder.PushField("name", &Subsub::name)
+			->PushStaticMethod("construct", &Subsub::Create);
+	}
+
+	{
+		LuRef::ClassBuilder<Sub> builder{"Sub"};
+		builder.PushField("map", &Sub::map)
+			->PushStaticMethod("construct", &Sub::Create);
+	}
+	{
+		LuRef::ClassBuilder<Tail> builder{"Tail"};
+		builder.PushField("id", &Tail::id)
+			->PushField("name", &Tail::name)
+			->PushField("k", &Tail::k)
+			->PushField("subs", &Tail::subs)
+			->PushStaticMethod("construct",&Tail::Create);
+	}
 	{
 		LuRef::ClassBuilder<Vec> builder{"Vec"};
 		builder.PushField("x", &Vec::x)
@@ -166,10 +224,8 @@ void Register(){
 }
 
 #include"Readme.cpp"
-
-
 void test1() {
-	auto obj = LuRef::ClassManager::FindClass("Vec")->Instantiate(1.0f, 1.0f);
+	auto obj = LuRef::ClassManager::FindClass("Vec")->MakeShared(1.0f, 1.0f);
 	auto data = obj->As<Vec>();
 	//测试拷贝字段的通用性
 	obj->SetFieldWithAlias("tail", Tail{});
@@ -201,7 +257,7 @@ void test1() {
 
 	//测试多个类
 	std::vector<std::string> myName{"liu", "huan", "ming"};
-	auto pstr = LuRef::ClassManager::FindClass("PStr")->Instantiate(myName);
+	auto pstr = LuRef::ClassManager::FindClass("PStr")->MakeShared(myName);
 	std::string love = "love";
 	std::string cpp = "cpp";
 	std::string_view view{cpp};
@@ -217,7 +273,7 @@ void test1() {
 	std::cout << "Rectangle base on Virtual :" << LuRef::Inheritance::IsBaseOf("Virtual", "Rectangle") << std::endl;
 
 	//测试通过继承关系获取的子类信息
-	auto rectangle = LuRef::ClassManager::FindClass("Rectangle")->Instantiate(
+	auto rectangle = LuRef::ClassManager::FindClass("Rectangle")->MakeShared(
 		std::vector<std::pair<float, float>>{{-1.0f, 0}, { 1.0f,0 }, { 0,-1.0f }, { 0,1.0f }, { 0.0f,0 }}
 	);
 	bool intersectRes = false;
@@ -235,12 +291,12 @@ void test1() {
 
 void test2() {
 
-	auto animal = LuRef::ClassManager::FindClass("Animal")->Instantiate();
+	auto animal = LuRef::ClassManager::FindClass("Animal")->MakeShared();
 	animal->SetFieldWithAlias("name", std::string{"bob"});
 	std::cout << animal->As<Animal>()->name << std::endl;
 	animal->InvokeMember("eat", LuRef::voidPtr);
 
-	auto cat = LuRef::ClassManager::FindClass("Cat")->Instantiate(std::string{"ana"});
+	auto cat = LuRef::ClassManager::FindClass("Cat")->MakeShared(std::string{"ana"});
 	cat->SetFieldWithAlias("name", std::string("ash"));
 	std::cout << cat->As<Cat>()->name << std::endl;
 	cat->InvokeMember("Move",LuRef::voidPtr);
@@ -248,36 +304,42 @@ void test2() {
 	cat->InvokeMember("GetPosition", &pos);
 	std::cout << "pos: " << pos.first << " " << pos.second << std::endl;
 	cat->InvokeMember("eat", LuRef::voidPtr);
+
 }
 
+void Nodes(YAML::Node){}
+
+//测试序列化系统
+void test3() {
+	//创建对象
+	YAML::Node node;
+	auto cat = LuRef::ClassManager::FindClass("Cat")->MakeShared(std::string("bob"));
+	YAML::Node catSubnode = node["cat"];
+	cat->SetFieldWithAlias("color", std::string("red"));
+	auto catVec = LuRef::ClassManager::FindClass("Cat")->MakeWithData(cat->As<Cat>());
+	//序列化对象
+	LuRef::SerializationManager::Serialize(catSubnode, *catVec);
+
+	auto vec = LuRef::ClassManager::FindClass("Vec")->MakeShared(876942392.f, 10086.f);
+	YAML::Node vecSubnode = node["vec"];
+	auto serVec = LuRef::ClassManager::FindClass("Vec")->MakeWithData(vec->As<Vec>());
+	LuRef::SerializationManager::Serialize(vecSubnode, *serVec);
+
+
+	std::ofstream os("output.yaml");
+	YAML::Emitter emitter;
+	emitter << node;
+	os << emitter.c_str();
+}
+
+
+
+
 int main() {
-	Vec(Vec::*ptr)(int) = &Vec::normal;
+	Vec(Vec:: * ptr)(int) = &Vec::normal;
 	Register();
 	Register__();
+	test3();
 
-	test2();
-
-
-	//LuRef::DTypeFlyweight::FindRef<int>().hashID;
-	/*
-	TestName ts;
-	LuRef::Method me{&TestName::fun};
-	LuRef::Method me2{&TestName::funSize};
-	std::vector<int*> a;
-	const auto& t = LuRef::DTypeFlyweight::FindRef<int>();
-	std::string res = "error";
-	std::string para = "xxx";
-	std::string para2 = "sss";
-	std::cout << LuRef::STypeID<std::string&>::strID << std::endl;
-	Traits(std::ref(para));
-	try {
-		me2.invoke(
-			&ts, LuRef::voidPtr, para, std::move(para2)
-		);
-	}
-	catch (std::exception e) {
-		std::cout << e.what();
-	}
-	std::cout << "\n" << res;
-	*/
+	//test2();
 }

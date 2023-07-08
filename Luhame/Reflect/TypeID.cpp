@@ -7,13 +7,11 @@ namespace LuRef {
 		return hashToStr.find(hashID) != hashToStr.end();
 	}
 
-	std::optional<std::string_view> IDRegistry::NameOf(size_t hashID)
+	const std::string* IDRegistry::NameOf(size_t hashID)
 	{
-		std::optional<std::string_view> res;
 		if (hashToStr.find(hashID) == hashToStr.end())
-			return res;
-		res = hashToStr.at(hashID);
-		return res;
+			return nullptr;
+		return &hashToStr.at(hashID);
 	}
 
 	void IDRegistry::Register(size_t hashID, const std::string& alias){

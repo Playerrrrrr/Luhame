@@ -1,5 +1,6 @@
 #include"Reflect/Dscp.h"
 #include<string>
+#include"Reflect/ClassBuilder.hpp"
 struct Animal {
 	std::string name = "none";
 	float x=1, y=1;

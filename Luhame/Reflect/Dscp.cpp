@@ -60,7 +60,7 @@ namespace LuRef {
 	}
 
 
-	std::shared_ptr<Field> Object::GetFieldWithAlias(const std::string& alias) const{
+	std::shared_ptr<Field> SharedObject::GetFieldWithAlias(const std::string& alias) const{
 		for (auto& t : fieldInstance) {
 			if (t->dscp.alias == alias)
 				return t;
@@ -91,11 +91,11 @@ namespace LuRef {
         auto it1 = rels.find(type1);
         auto it2 = rels.find(type2);
         if (it1 == rels.end()) {
-            LU_LOG_WARN(IDRegistry::NameOf(type1).value() << " not register to Inheritance");
+            LU_LOG_WARN(*IDRegistry::NameOf(type1) << " not register to Inheritance");
             return false;
         }
         if (it2 == rels.end()) {
-            LU_LOG_WARN(IDRegistry::NameOf(type2).value() << " not register to Inheritance");
+            LU_LOG_WARN(*IDRegistry::NameOf(type2) << " not register to Inheritance");
             return false;
         }
         if (TraversalToBase(rels.find(type2)->second.get(), type1)) {
@@ -168,6 +168,68 @@ namespace LuRef {
                 return true;
         }
         return false;
+    }
+
+
+    std::shared_ptr<SharedObject> ClassDscp::MakeSharedWithData(void* data) const {
+        void* objPtr = data;
+        std::vector<std::shared_ptr<Field>> fields;
+        for (const auto& t : fieldDscps) {
+            fields.push_back(std::shared_ptr<Field>{t.second.Instantiate(objPtr, type.hashID)});
+        }
+        std::vector<std::shared_ptr<Method>> methods;
+        for (const auto& t : methodsDscp) {
+            void* data = objPtr;
+            /*
+            *	是否重载
+            *		是->转换
+            *			是否转换成功
+            *				是->构造
+            *				否->报错+pass
+            *		否->不转换
+            */
+            if (t.second.needConvert) {
+                data = Inheritance::Convert(objPtr, t.second.classType->hashID, type.hashID);
+                if (data == nullptr) {
+                    LU_LOG_ERROR("error : convert error" << "[at " << __FILE__ << " line: " << __LINE__);
+                    continue;
+                }
+            }
+            methods.push_back(std::shared_ptr<Method>{t.second.Instantiate(data)});
+        }
+        std::shared_ptr<SharedObject> obj{new SharedObject{ *this,objPtr,std::move(fields),std::move(methods) }};
+        return obj;
+    }
+
+    Object* ClassDscp::MakeWithData(void* data) const
+    {
+        void* objPtr = data;
+        std::vector<std::shared_ptr<Field>> fields;
+        for (const auto& t : fieldDscps) {
+            fields.push_back(std::shared_ptr<Field>{t.second.Instantiate(objPtr, type.hashID)});
+        }
+        std::vector<std::shared_ptr<Method>> methods;
+        for (const auto& t : methodsDscp) {
+            void* data = objPtr;
+            if (t.second.needConvert) {
+                data = Inheritance::Convert(objPtr, t.second.classType->hashID, type.hashID);
+                if (data == nullptr) {
+                    LU_LOG_ERROR("error : convert error" << "[at " << __FILE__ << " line: " << __LINE__);
+                    continue;
+                }
+            }
+            methods.push_back(std::shared_ptr<Method>{t.second.Instantiate(data)});
+        } 
+        return  new Object{ *this,objPtr,std::move(fields),std::move(methods) };
+    }
+
+    std::shared_ptr<Field> Object::GetFieldWithAlias(const std::string& alias) const
+    {
+		for (auto& t : fieldInstance) {
+			if (t->dscp.alias == alias)
+				return t;
+		}
+		return nullptr;
     }
 
 }

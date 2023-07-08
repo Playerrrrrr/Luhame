@@ -146,7 +146,7 @@ namespace LuRef {
 	public:
 		IDRegistry() {}
 		static bool IsRegistered(size_t);
-		static std::optional<std::string_view> NameOf(size_t);
+		static const std::string* NameOf(size_t);
 		static void Register(size_t hashID, const std::string& alias);
 	private:
 		inline static std::unordered_map<size_t, std::string> hashToStr;
