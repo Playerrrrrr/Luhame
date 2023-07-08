@@ -1,0 +1,42 @@
+格式：
+	index : 时间：工作环境：命名空间：文件
+	问题：
+	原因：
+	解决方法
+
+0 : 2023.7.7 : 家里的椅子上，老妈忘了做饭 ：LuRef ：Dscp.h
+	problem    ：构建一个object设置基类字段，出现内存错误，
+				
+	reason     ：用基类的成员变量指针和子类的成员变量指针来描述同一块内存
+			     的方法是错误的，构建描述类工具类时构造的拉取函数出现错误
+				 ，不能正确拉取静态实例中的字段
+
+	resolution ：构建描述类工具类ClassBuilder时，传入子类模板参数到其中，
+				 即ClassBuilder<BaseClass,Derived...>，然后类型传播到构
+				 建FieldDscp中，讲基类成员变量指针实例转型为子类成员变量
+				 指针，用子类的hashID进行索引
+
+
+	A的基类的基类要登记A
+
+1 ：2023.7.7 ：家里的椅子上，脑袋疼，如释重负：LuRef ： Dscp.h
+	proble     ：出现内存错误
+
+	reason     ：Field中的字段指针相对静态对象出现偏移，这边我犯了一个错
+				 错误，如果即指针的类型转换是可以偏移指针指向，我将Rectangle
+				 *转换为void*，然后转换为Shape*，这个时候全程指针指向内存
+				 不变的，但正确的转换是Rectangle直接转变为Shape* ，这个时
+				 因为类的内存模型，会出现指针偏移，所以导致指针描述错误，
+				 相应地，函数也有问题，因为指针偏移，所以传入的基类指针描
+				 述的对象是错误的；
+
+				 [Rectangle继承Shape]
+
+	resolution：在ClassBuilder中加入全局的模板，其中包含描述类的子类，在
+				PushMethod时，将模板传播到FieldDscp中，然后生成对应的基类
+				转子类的lambda封装，这个封装在构建Field时，正确地拉取对象
+				中的字段指针
+				注意：在构建FieldDscp时，是将传入其中函数成员指针进行转型
+				，MethodDscp是将对象指针转型
+				[字段 : T Base::* -> T Derived::* ,
+				 函数 : C* -> Derived];
