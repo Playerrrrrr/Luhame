@@ -105,13 +105,15 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>../Yaml/yaml/include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../Yaml/yaml/include;.;../Spdlog/spdlog/include;../GLM/glm;../GLAD/glad/include;../IMGUI;../GLFW/glfw/include;../IMGUI/imgui;../SDL/SDL2/SDL2/include</AdditionalIncludeDirectories>
+      <UseStandardPreprocessor>true</UseStandardPreprocessor>
+      <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>./Lib/$(Configuration)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>Yaml.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>../x64/$(Configuration);../x64</AdditionalLibraryDirectories>
+      <AdditionalDependencies>Yaml.lib;GLM.lib;Spdlog.lib;GLFW.lib;GLAD.lib;IMGUI.lib;SDL2.lib;SDL2main.lib;d3d11.lib;dxgi.lib;d3dcompiler.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -122,36 +124,49 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../Yaml/yaml/include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../Yaml/yaml/include;.;../Spdlog/spdlog/include;../GLM/glm;../GLAD/glad/include;../IMGUI;../GLFW/glfw/include;../IMGUI/imgui;../SDL/SDL2/SDL2/include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <UseStandardPreprocessor>true</UseStandardPreprocessor>
+      <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>./Lib/$(Configuration)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>Yaml.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>../x64/$(Configuration);../x64</AdditionalLibraryDirectories>
+      <AdditionalDependencies>Yaml.lib;GLM.lib;Spdlog.lib;GLFW.lib;GLAD.lib;IMGUI.lib;SDL2.lib;SDL2main.lib;d3d11.lib;dxgi.lib;d3dcompiler.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="CCS\LuCcs.cpp" />
+    <ClCompile Include="ImGuiWrapper\ImGuiListBox.cpp" />
+    <ClCompile Include="ImGuiWrapper\ImGuiSearchBar.cpp" />
+    <ClCompile Include="ImGuiWrapper\ImGuiWindow.cpp" />
+    <ClCompile Include="ImGuiWrapper\Drags.cpp" />
     <ClCompile Include="Readme.cpp" />
     <ClCompile Include="Reflect\Alias.cpp" />
-    <ClCompile Include="Reflect\inheritance.cpp" />
     <ClCompile Include="Reflect\Dscp.cpp" />
-    <ClCompile Include="FileName.cpp" />
-    <ClCompile Include="Reflect\TypeInfo.h" />
+    <ClCompile Include="testCcs.cpp" />
+    <ClCompile Include="testRef.cpp" />
     <ClCompile Include="Reflect\TypeID.cpp" />
     <ClCompile Include="Reflect\TypeID.h" />
     <ClCompile Include="Reflect\Serialization.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CCS\LuCcs.h" />
+    <ClInclude Include="ImGuiWrapper\ImGuiListBox.h" />
+    <ClInclude Include="ImGuiWrapper\ImGuiSearchBar.h" />
+    <ClInclude Include="ImGuiWrapper\ImGuiWindow.h" />
+    <ClInclude Include="ImGuiWrapper\Core.h" />
+    <ClInclude Include="ImGuiWrapper\Drags.h" />
+    <ClInclude Include="Log\lulog.hpp" />
     <ClInclude Include="Reflect\Alias.h" />
     <ClInclude Include="Reflect\ClassBuilder.hpp" />
-    <ClInclude Include="Reflect\inheritance.h" />
     <ClInclude Include="Reflect\Dscp.h" />
     <ClInclude Include="Reflect\Util.hpp" />
     <ClInclude Include="Reflect\Serialization.h" />
+    <ClInclude Include="test_define.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="log.txt" />

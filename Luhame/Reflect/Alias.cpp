@@ -1,5 +1,5 @@
 #include "Alias.h"
-namespace LuRef{
+namespace LuRef {
 	void ClassAlias::Register(const std::string& alias, const HashID hashID) {
 		auto it = hashIDToAlias.find(hashID);
 		if (it != hashIDToAlias.end())

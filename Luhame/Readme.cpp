@@ -1,6 +1,7 @@
 #include"Reflect/Dscp.h"
 #include<string>
 #include"Reflect/ClassBuilder.hpp"
+
 struct Animal {
 	std::string name = "none";
 	float x=1, y=1;
@@ -40,7 +41,7 @@ struct Cat : public Animal {
 
 static void Register__(){
 	{
-		LuRef::ClassBuilder<Animal, Cat> buiilderAnimal("Animal");//构造描述类工具类
+		LuRef::ClassBuilder<Animal, Cat> buiilderAnimal("Animal",true);//构造描述类工具类
 		buiilderAnimal
 			.PushField("name", &Animal::name)
 			->PushField("x", &Animal::x)
@@ -49,7 +50,7 @@ static void Register__(){
 			->PushStaticMethod("construct", &Animal::Create);
 	}
 	{
-		LuRef::ClassBuilder<Cat> buiilderCat("Cat");//构造描述类工具类
+		LuRef::ClassBuilder<Cat> buiilderCat("Cat", true);//构造描述类工具类
 		buiilderCat
 			.PushField("color", &Cat::color)
 			->PushField("hp", &Cat::hp)

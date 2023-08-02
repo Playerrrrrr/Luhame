@@ -1,4 +1,5 @@
 #pragma once
+#include"Log/lulog.hpp"
 #include"Dscp.h"
 #include"Serialization.h"
 namespace LuRef {
@@ -50,7 +51,7 @@ namespace LuRef {
 		ClassBuilder<DT, Deriveds...>* PushStaticMethod(const std::string& alias, R(*funptr)(Args...));
 
 
-		ClassBuilder(const std::string& alias);
+		ClassBuilder(const std::string& alias, bool isLog = false);
 		~ClassBuilder();
 	private:
 
@@ -60,7 +61,7 @@ namespace LuRef {
 
 		std::shared_ptr<ClassDscp> dscp;
 		std::string alias;
-
+		bool isLog;
 	};
 
 	template<typename DT, typename ...Deriveds>
@@ -75,7 +76,8 @@ namespace LuRef {
 		auto ser = SerializationManager::FindSer(STypeID<T>::hashID);
 		if (ser == nullptr)
 			BuildeSerialization<T>();
-
+		if (isLog)
+			LU_CORE_INFO_FL("Builing field {}.{}", this->alias, alias);
 		dscp->fieldDscps.emplace(alias,
 			FieldDscp::FieldDscp(alias, ptr, isGlobal, Flag<Deriveds...>{}));
 		return this;
@@ -84,6 +86,8 @@ namespace LuRef {
 	template<typename DT, typename ...Deriveds>
 	template<typename C, typename R, typename ...Args>
 	inline ClassBuilder<DT, Deriveds...>* ClassBuilder<DT, Deriveds...>::PushMethod(const std::string& alias, R(C::* funptr)(Args...), bool isVirtual, bool IsOverride) {
+		if (isLog)
+			LU_CORE_INFO_FL("Builing member method {}::{}", this->alias, alias);
 		dscp->methodsDscp.emplace(alias,
 			MethDscp{ alias,funptr,isVirtual,IsOverride,Flag<Deriveds...> {} });
 		return this;
@@ -91,18 +95,23 @@ namespace LuRef {
 	template<typename DT, typename ...Deriveds>
 	template<typename R, typename ...Args>
 	inline ClassBuilder<DT, Deriveds...>* ClassBuilder<DT, Deriveds...>::PushStaticMethod(const std::string& alias, R(*funptr)(Args...)) {
+		if (isLog)
+			LU_CORE_INFO_FL("Builing static method {}::{}", this->alias, alias);
 		dscp->methodsDscp.emplace(alias,
 			MethDscp{ alias,funptr });
 		return this;
 	}
 
 	template<typename DT, typename ...Deriveds>
-	inline ClassBuilder<DT, Deriveds...>::ClassBuilder(const std::string& alias)
-		:alias(alias) {
+	inline ClassBuilder<DT, Deriveds...>::ClassBuilder(const std::string& alias, bool isLog)
+		:alias(alias), isLog(isLog) {
 		dscp.reset(new ClassDscp{ Flag<DT>{},alias });
+
 		//导入父子类关系
 		(
-			[]() {
+			[this,isLog]() {
+				if (isLog)
+					LU_CORE_INFO_FL("Builing the relationship that {} base on {}", STypeID<Deriveds>::strID, this->alias);
 				Inheritance::RegisterRelationship<DT, Deriveds >();
 			}()
 				, ...);
@@ -231,8 +240,21 @@ namespace LuRef {
 	template<typename T>
 	inline void ClassBuilder<DT, Deriveds...>::BuildeSerialization(){
 		Serialization ser;
+		//做一个优化，看该类是否可以直接由yaml库进行序列化
+		if constexpr (is_imp_by_yaml<T>::value) {
+			ser.serialize = [](YAML::Node& node, const void* data) {
+				node = YAML::convert<T>::encode(*static_cast<const T*>(data));
+			};
+			ser.deserialize = [](const YAML::Node& node, void* data) {
+				YAML::convert<T>::decode(node, *static_cast<T*>(data));
+				return true;
+			};
+			SerializationManager::PushSerialization(STypeID<T>::hashID, ser);
+			return;
+		}
+		if(isLog)
+			LU_CORE_INFO_FL("construct serialization and deserialization function for:{} ", STypeID<T>::strID);
 		//如果为登记类，则用动态的方法构建
-		std::cout << "construct serialization and deserialization function for: " << STypeID<T>::strID << std::endl;
 		if (ClassAlias::Find(STypeID<T>::hashID)) {
 			ser.serialize = [](YAML::Node& node, const void* data) {
 				const Object* obj = static_cast<const Object*>(data);
@@ -247,7 +269,7 @@ namespace LuRef {
 					//这边要判断一下是否是动态方法构建序列化函数，如果是，要将其封装为反射Object
 					void* fieldData;
 					if (ClassAlias::Find(t->dscp.type.hashID)) {
-						auto classDscpOf_t = IDRegistry::NameOf(t->dscp.type.hashID);
+						auto classDscpOf_t = ClassAlias::Find(t->dscp.type.hashID);
 						if (!classDscpOf_t)
 							throw std::exception{"bad serialize"};
 						fieldData = ClassManager::FindClass(
@@ -273,7 +295,7 @@ namespace LuRef {
 						throw std::exception{"bad serialize"};
 					void* fieldData;
 					if (ClassAlias::Find(t->dscp.type.hashID)) {
-						auto classDscpOf_t = IDRegistry::NameOf(t->dscp.type.hashID);
+						auto classDscpOf_t = ClassAlias::Find(t->dscp.type.hashID);
 						if (!classDscpOf_t)
 							throw std::exception{"bad serialize"};
 						fieldData = ClassManager::FindClass(
@@ -331,7 +353,7 @@ namespace YAML {
 			//可能传入的是一个对象，要判别一下
 			const void* fieldData;
 			if (::LuRef::ClassAlias::Find(::LuRef::STypeID<T>::hashID)) {
-				auto classDscpOf_T = ::LuRef::IDRegistry::NameOf(::LuRef::STypeID<T>::hashID);
+				auto classDscpOf_T = ::LuRef::ClassAlias::Find(::LuRef::STypeID<T>::hashID);
 				if (!classDscpOf_T)
 					throw std::exception{"bad serialize"};
 				fieldData = LuRef::ClassManager::FindClass(
@@ -357,7 +379,7 @@ namespace YAML {
 			//可能传入的是一个对象，要判别一下
 			void* fieldData;
 			if (::LuRef::ClassAlias::Find(::LuRef::STypeID<T>::hashID)) {
-				auto classDscpOf_T = ::LuRef::IDRegistry::NameOf(::LuRef::STypeID<T>::hashID);
+				auto classDscpOf_T = ::LuRef::ClassAlias::Find(::LuRef::STypeID<T>::hashID);
 				if (!classDscpOf_T)
 					throw std::exception{"bad serialize"};
 				fieldData = LuRef::ClassManager::FindClass(

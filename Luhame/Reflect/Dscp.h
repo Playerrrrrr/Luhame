@@ -5,11 +5,12 @@
 #include<memory>
 #include<functional>
 #include"Alias.h"
-#include"inheritance.h"
 #include<queue>
+#include"Log/lulog.hpp"
 namespace LuRef {
 	class Field;
 	class SharedObject;
+	class Object;
 	class Method;
 
 	enum VirtualFunState {
@@ -29,75 +30,14 @@ namespace LuRef {
 		template<typename R, typename... Args>
 		MethDscp(const std::string& alias, R(*funptr)(Args...));
 
-		template<typename T, typename...Args>
-		void CheckParaType(int index) const {
-			try {
 
-				if (!MatchProperty(DTypeFlyweight::FindRef<T>(), *paraListType[index])) {
-					throw std::exception{
-						std::string{
-							std::string("error: the para type is wrong [") +
-								GetPropertyChar(STypeID<T>::isConst) + " " +
-								std::string(STypeID<T>::strID) +
-								GetPropertyChar(STypeID<T>::isRef) + " " +
-								std::string("] convert to [") +
-								GetPropertyChar(paraListType[index]->isConst) + " " +
-								std::string(paraListType[index]->strID) +
-								GetPropertyChar(paraListType[index]->isRef) + " " +
-								"] at position " +
-								std::to_string(index)
-						}.c_str()
-					};
-				}
-				if constexpr (sizeof...(Args) != 0)
-					CheckParaType<Args...>(index + 1);
-				else
-					return;
-			}
-			catch (std::exception e) {
-				throw e;
-			}
-		}
+		template<typename T, typename...Args>
+		void CheckParaType(int index) const;
 
 		template<typename C>
-		void CheckClass()const {
-			if (!MatchProperty(DTypeFlyweight::FindRef<C>(), *classType)) {
-				throw std::exception{
-					std::string{
-						std::string("error: the class type is wrong") +
-							GetPropertyChar(STypeID<C>::isConst) +
-							std::string(STypeID<C>::strID) +
-							GetPropertyChar(STypeID<C>::isRef) +
-							std::string(" convert to ") +
-							GetPropertyChar(classType->isConst) +
-							std::string(classType->strID) +
-							GetPropertyChar(classType->isRef)
-
-					}.c_str()
-				};
-			}
-		}
-
+		void CheckClass()const;
 		template<typename R>
-		void CheckReturnType()const {
-			if (resType->isPtr)//当返回值位指针时，视为指针转指针
-				return;
-			if (!MatchProperty(DTypeFlyweight::FindRef<R>(), *resType)) {
-				throw std::exception{
-					std::string{
-						std::string("error: the return res type is wrong") +
-							GetPropertyChar(STypeID<R>::isConst) +
-							std::string(STypeID<R>::strID) +
-							GetPropertyChar(STypeID<R>::isRef) +
-							std::string(" convert to ") +
-							GetPropertyChar(resType->isConst) +
-							std::string(resType->strID) +
-							GetPropertyChar(resType->isRef)
-					}.c_str()
-				};
-			}
-		}
-
+		void CheckReturnType()const;
 		Method* Instantiate(void* data)const;
 		 
 		std::vector<const DTypeID*> paraListType;
@@ -107,7 +47,7 @@ namespace LuRef {
 		const DTypeID* funcNoClassType;
 		const std::string alias;
 		const  bool isMember = false;
-		const bool isVirtual = false;
+		const  bool isVirtual = false;
 		bool needConvert = false;
 	private:
 		std::function<Method* (const MethDscp*,void*)> instantiateFun;
@@ -121,72 +61,28 @@ namespace LuRef {
 	public:
 		//成员方法
 		template<typename C, typename R, typename... Args>
-		Method(void* data,const MethDscp& dscp, R(C::* funptr)(Args...))
-			:dscp(dscp) ,data(data){
-			if constexpr (!std::is_same_v<void, R>) {
-				func = [funptr](void*& res, void* paras) {
-					using para_type_list = std::tuple<C*, Args&&...>;
-					para_type_list&& paraList = std::move(*reinterpret_cast<para_type_list*>(paras));
-					//如果是非指针，那么就是调用拷贝构造函数，如果是指针，则接收指针
-					if constexpr (!std::is_pointer_v<R>) {
-						new (reinterpret_cast<R*>(res)) R{
-							std::apply(funptr, std::forward<decltype(paraList)>(paraList))
-						};
-					}
-					else {
-						res = std::apply(funptr, std::forward<decltype(paraList)>(paraList));
-					}
-				};
-			}
-			else {
-				voidRFunc = [funptr](void* paras) {
-					using para_type_list = std::tuple<C*, Args&&...>;
-					para_type_list&& paraList = std::move(*reinterpret_cast<para_type_list*>(paras));
-					std::apply(funptr, std::forward<decltype(paraList)>(paraList));
-				};
-			}
-		}
+		Method(void* data, const MethDscp& dscp, R(C::* funptr)(Args...));
 		//非成员方法
 		template<typename R, typename... Args>
-		Method(const MethDscp& dscp, R(*funptr)(Args...))
-			:dscp(dscp) {
-			//区别对待返回值为空的函数
-			if constexpr (!std::is_same_v<void, R>) {
-				func = [funptr](void*& res, void* paras) {
-					using para_type_list = std::tuple<Args&&...>;
-					para_type_list&& paraList = std::move(*reinterpret_cast<para_type_list*>(paras));
-					//如果是非指针，那么就是调用拷贝构造函数，如果是指针，则接收指针
-					if constexpr (!std::is_pointer_v<R>) {
-						new (reinterpret_cast<R*>(res)) R{
-							std::apply(funptr, std::forward<decltype(paraList)>(paraList))
-						};
-					}
-					else {
-						res = std::apply(funptr, std::forward<decltype(paraList)>(paraList));
-					}
-				};
-			}
-			else {
-				voidRFunc = [funptr](void* paras) {
-					using para_type_list = std::tuple<Args&&...>;
-					para_type_list&& paraList = std::move(*reinterpret_cast<para_type_list*>(paras));
-					std::apply(funptr, std::forward<decltype(paraList)>(paraList));
-				};
-			}
-		}
+		Method(const MethDscp& dscp, R(*funptr)(Args...));
 
 		//若函数没有返回值，则建议使用res传入nullptr
 
 		//如果返回值是非指针，那么视为在一块已知内存中构建对象，如果返回值是指针，那么视为获取该指针
 		//注意，因为指针转指针是一级转一级，所以我们这边加上引用，要不然作用不到外部指针
+		//res传入nullptr视为不接收结果,但是好像std::function会对参数进行调试，不能为空
+		//callable调用
 		template<typename C, typename R, typename...Args >
 		void InvokeWithCallable(C*& obj, R*& res, Args&&... args);
 
-		//动态调用，不知道对象类型
+		//动态调用
 		template<typename R, typename...Args >
 		void InvokeWithObj(SharedObject*&, R*& res, Args&&... args);
 
-		//如果返回值是非指针，那么视为在一块已知内存中构建对象，如果返回值是指针，那么视为获取该指针
+		template<typename R, typename...Args >
+		void InvokeWithObj(Object*&, R*& res, Args&&... args);
+
+		//res传入nullptr视为不接收结果
 		template<typename R, typename...Args >
 		void InvokeStatic(R*& res, Args&&... args);
 
@@ -362,6 +258,8 @@ namespace LuRef {
 		Object* Make(Args&&... args) const;
 		
 		std::shared_ptr<SharedObject> MakeSharedWithData(void*) const;
+		//这个方法是给一块被引用的内存创建对象，保证共享指针的引用会加一
+		std::shared_ptr<SharedObject> MakeSharedWithData(std::shared_ptr<void>) const;
 		Object* MakeWithData(void*) const;
 		friend class Method;
 		friend class Inheritance;
@@ -380,6 +278,11 @@ namespace LuRef {
 
 		std::shared_ptr<Field> GetFieldWithAlias(const std::string& alias) const;
 
+		//如果返回值是非指针，那么视为在一块已知内存中构建对象，如果返回值是指针，那么视为获取该指针
+		//注意，因为指针转指针是一级转一级，所以我们这边加上引用，要不然作用不到外部指针
+		//res传入nullptr视为不接收结果,但是好像std::function会对参数进行调试，不能为空
+		//callable调用
+
 		//调用非成员函数，无返回值res传入nullptr
 		template<typename R, typename... Args>
 		void InvokeStatic(const std::string& alias, R*& ptr, Args&&... args);
@@ -397,7 +300,9 @@ namespace LuRef {
 
 
 		template<typename T>
-		T* As() { return static_cast<T*>(objPtr.get()); }
+		T* As() { 
+			return static_cast<T*>(objPtr.get());
+		}
 
 		std::shared_ptr<SharedObject*> Convert() {
 
@@ -407,7 +312,10 @@ namespace LuRef {
 			std::vector<std::shared_ptr<Method>>&& method)
 			:dscp(dscp), objPtr(data),
 			fieldInstance(std::move(field)), methodInstance(std::move(method)) {}
-
+		SharedObject(const ClassDscp& dscp, std::shared_ptr<void> data, std::vector<std::shared_ptr<Field>>&& field,
+			std::vector<std::shared_ptr<Method>>&& method)
+			:dscp(dscp), objPtr(data),
+			fieldInstance(std::move(field)), methodInstance(std::move(method)) {}
 
 		const ClassDscp& dscp;
 		std::shared_ptr<void> objPtr;
@@ -420,6 +328,7 @@ namespace LuRef {
 		friend class SerializationManager;
 		template<typename DT, typename ...Deriveds>
 		friend class ClassBuilder;
+		friend class Inheritance;
 	};
 
 	class Object {
@@ -446,7 +355,7 @@ namespace LuRef {
 
 
 		template<typename T>
-		T* As() { return static_cast<T*>(objPtr.get()); }
+		T* As() { return static_cast<T*>(objPtr); }
 
 	protected:
 		Object(const ClassDscp& dscp, void* data, std::vector<std::shared_ptr<Field>>&& field,
@@ -466,6 +375,7 @@ namespace LuRef {
 		friend class SerializationManager;
 		template<typename DT, typename ...Deriveds>
 		friend class ClassBuilder;
+		friend class Inheritance;
 	};
 
 
@@ -505,8 +415,9 @@ namespace LuRef {
 		std::vector<Relationship*> baseClass;
 		std::vector<Relationship*> subClass;
 		size_t hashID;
+		std::string name;
 		const ClassDscp& GetClassDscp() { return *ClassManager::FindClass(hashID); }
-		Relationship(const size_t& hashID);
+		Relationship(const size_t& hashID,std::string name);
 	};
 
 	//管理继承体系的类，应该要有一个实例
@@ -514,13 +425,15 @@ namespace LuRef {
 	class Inheritance {
 	public:
 		static bool IsBaseOf(const std::string& base, const std::string& sub);
-		static bool IsBaseOf(size_t type1, size_t type2);
+		static bool IsBaseOf(size_t base, size_t sub);
 		//返回type1是否能转换成type2
-		static bool CanConvert(const std::string& type1, const std::string& type2);
-		static bool CanConvert(size_t type1, size_t type2);
+		//注意，这边的原则是如果类在继承树中，那么可以看是否转型，如果不在如float，那么就看hashID是否相同
+		static bool CanConvert(const std::string& derived, const std::string& base);
+		static bool CanConvert(size_t derived, size_t base);
 		//将指向derived类型的指针data，安全转换为data，如果失败，return nullptr
 		static void* Convert(void* data,size_t base, size_t derived);
-
+		static Object* Convert(Object*, const std::string& base);
+		static std::shared_ptr<SharedObject> Convert(std::shared_ptr<SharedObject>, const std::string& base);
 		static std::optional<std::vector<const ClassDscp*>> FindBaseClass(size_t);
 		static std::optional<std::vector<const ClassDscp*>> FindBaseClass(const std::string&);
 		static std::optional<std::vector<const ClassDscp*>> FindDerivedClass(size_t);
@@ -607,6 +520,75 @@ namespace LuRef {
 		};
 	}
 
+
+	template<typename T, typename...Args>
+	void inline MethDscp::CheckParaType(int index) const {
+		try {
+			if (!MatchProperty(DTypeFlyweight::FindRef<T>(), *paraListType[index])) {
+				throw std::exception{
+					std::string{
+						std::string("error: the para type is wrong [") +
+							GetPropertyChar(STypeID<T>::isConst) + " " +
+							std::string(STypeID<T>::strID) +
+							GetPropertyChar(STypeID<T>::isRef) + " " +
+							std::string("] convert to [") +
+							GetPropertyChar(paraListType[index]->isConst) + " " +
+							std::string(paraListType[index]->strID) +
+							GetPropertyChar(paraListType[index]->isRef) + " " +
+							"] at position " +
+							std::to_string(index)
+					}.c_str()
+				};
+			}
+			if constexpr (sizeof...(Args) != 0)
+				CheckParaType<Args...>(index + 1);
+			else
+				return;
+		}
+		catch (std::exception e) {
+			throw e;
+		}
+	}
+
+	template<typename C>
+	void inline MethDscp::CheckClass()const {
+		if (!MatchProperty(DTypeFlyweight::FindRef<C>(), *classType)) {
+			throw std::exception{
+				std::string{
+					std::string("error: the class type is wrong") +
+						GetPropertyChar(STypeID<C>::isConst) +
+						std::string(STypeID<C>::strID) +
+						GetPropertyChar(STypeID<C>::isRef) +
+						std::string(" convert to ") +
+						GetPropertyChar(classType->isConst) +
+						std::string(classType->strID) +
+						GetPropertyChar(classType->isRef)
+
+				}.c_str()
+			};
+		}
+	}
+
+	template<typename R>
+	void inline MethDscp::CheckReturnType()const {
+		if (resType->isPtr)//当返回值位指针时，视为指针转指针
+			return;
+		if (!MatchProperty(DTypeFlyweight::FindRef<R>(), *resType)) {
+			throw std::exception{
+				std::string{
+					std::string("error: the return res type is wrong") +
+						GetPropertyChar(STypeID<R>::isConst) +
+						std::string(STypeID<R>::strID) +
+						GetPropertyChar(STypeID<R>::isRef) +
+						std::string(" convert to ") +
+						GetPropertyChar(resType->isConst) +
+						std::string(resType->strID) +
+						GetPropertyChar(resType->isRef)
+				}.c_str()
+			};
+		}
+	}
+
 	template<typename...Args>
 	inline std::shared_ptr<SharedObject> ClassDscp::MakeShared(Args&&... args) const {
 		void* objPtr = nullptr;
@@ -622,6 +604,77 @@ namespace LuRef {
 	}
 
 
+	template<typename C, typename R, typename... Args>
+	inline Method::Method(void* data, const MethDscp& dscp, R(C::* funptr)(Args...))
+		:dscp(dscp), data(data) {
+		/*
+		* 返回值是否为空：
+		*	否->将函数保存到fun，并
+		*		返回值是否为指针类型：
+		*			否：
+		*				接收返回值的res指针是否为空
+		*					是：不接收返回值
+		*					否：在上res用返回值进行拷贝构造
+		*			是：直接赋值
+		*	是-将函数保存到voidRFun
+		*/
+		if constexpr (!std::is_same_v<void, R>) {
+			func = [funptr](void*& res, void* paras) {
+				using para_type_list = std::tuple<C*, Args&&...>;
+				para_type_list&& paraList = std::move(*reinterpret_cast<para_type_list*>(paras));
+
+				if constexpr (!std::is_pointer_v<R>|| res != nullptr) {
+					if (res != nullptr)
+						new (reinterpret_cast<R*>(res)) R{
+							std::apply(funptr, std::forward<decltype(paraList)>(paraList))
+					};
+					else
+						std::apply(funptr, std::forward<decltype(paraList)>(paraList));
+				}
+				else {
+					res = std::apply(funptr, std::forward<decltype(paraList)>(paraList));
+				}
+			};
+		}
+		else {
+			voidRFunc = [funptr](void* paras) {
+				using para_type_list = std::tuple<C*, Args&&...>;
+				para_type_list&& paraList = std::move(*reinterpret_cast<para_type_list*>(paras));
+				std::apply(funptr, std::forward<decltype(paraList)>(paraList));
+			};
+		}
+	}
+
+	template<typename R, typename...Args >
+	inline Method::Method(const MethDscp& dscp, R(*funptr)(Args...))
+		:dscp(dscp) {
+		//区别对待返回值为空的函数
+		if constexpr (!std::is_same_v<void, R>) {
+			func = [funptr](void*& res, void* paras) {
+				using para_type_list = std::tuple<Args&&...>;
+				para_type_list&& paraList = std::move(*reinterpret_cast<para_type_list*>(paras));
+				//如果是非指针，那么就是调用拷贝构造函数，如果是指针，则接收指针
+				if constexpr (!std::is_pointer_v<R>) {
+					if (res != nullptr)
+						new (reinterpret_cast<R*>(res)) R{
+						std::apply(funptr, std::forward<decltype(paraList)>(paraList))
+					};
+					else
+						std::apply(funptr, std::forward<decltype(paraList)>(paraList));
+				}
+				else {
+					res = std::apply(funptr, std::forward<decltype(paraList)>(paraList));
+				}
+			};
+		}
+		else {
+			voidRFunc = [funptr](void* paras) {
+				using para_type_list = std::tuple<Args&&...>;
+				para_type_list&& paraList = std::move(*reinterpret_cast<para_type_list*>(paras));
+				std::apply(funptr, std::forward<decltype(paraList)>(paraList));
+			};
+		}
+	}
 
 	template<typename C, typename R, typename ...Args>
 	inline void Method::InvokeWithCallable(C*& obj, R*& res, Args && ...args)
@@ -630,7 +683,8 @@ namespace LuRef {
 		try {
 			if (!isPass) {
 				dscp.CheckClass<C>();
-				dscp.CheckReturnType<R>();
+				if(res!=nullptr)//传入res视为不接收返回值
+					dscp.CheckReturnType<R>();
 				if constexpr (sizeof...(Args) != 0)
 					dscp.CheckParaType<Args&&...>(0);
 			}
@@ -638,7 +692,7 @@ namespace LuRef {
 
 		}
 		catch (std::exception& e) {
-			std::cout << e.what() << std::endl;
+			LU_CORE_ERROR_DS(e.what());
 			return;
 		}
 		using para_type_list = std::tuple<C*, Args&&...>;
@@ -657,14 +711,45 @@ namespace LuRef {
 		try {
 			if (!isPass) {
 				dscp.classType->CanConvert(obj->dscp.type);
-				dscp.CheckReturnType<R>();
+				if (res != nullptr)//传入res视为不接收返回值
+					dscp.CheckReturnType<R>();
 				if constexpr (sizeof...(Args) != 0)
 					dscp.CheckParaType<Args&&...>(0);
 			}
 			isPass = true;
 		}
 		catch (std::exception e) {
-			std::cout << e.what() << std::endl;
+			LU_CORE_ERROR_DS(e.what());
+			return;
+		}
+		using para_type_list = std::tuple<void*, Args&&...>;
+		para_type_list paraList{
+			data,
+			std::forward<Args>(args)... };
+
+		if (dscp.resType->hashID != STypeID<void>::hashID)
+			func(reinterpret_cast<void*&>(res), reinterpret_cast<void*>(&paraList));
+		else
+			voidRFunc(reinterpret_cast<void*>(&paraList));
+	}
+
+
+	template<typename R, typename ...Args>
+	inline void Method::InvokeWithObj(Object*& obj, R*& res, Args && ...args)
+	{
+		static bool isPass = false;
+		try {
+			if (!isPass) {
+				dscp.classType->CanConvert(obj->dscp.type);
+				if (res != nullptr)//传入res视为不接收返回值
+					dscp.CheckReturnType<R>();
+				if constexpr (sizeof...(Args) != 0)
+					dscp.CheckParaType<Args&&...>(0);
+			}
+			isPass = true;
+		}
+		catch (std::exception e) {
+			LU_CORE_ERROR_DS(e.what());
 			return;
 		}
 		using para_type_list = std::tuple<void*, Args&&...>;
@@ -690,7 +775,10 @@ namespace LuRef {
 			isPass = true;
 		}
 		catch (std::exception e) {
-			throw e;
+
+			LU_CORE_ERROR_DS(e.what());
+
+			return;
 		}
 		using para_type_list = std::tuple<Args&&...>;
 		para_type_list paraList{ std::forward<Args>(args)... };
@@ -725,7 +813,14 @@ namespace LuRef {
 
 	template<typename R, typename ...Args>
 	inline void SharedObject::InvokeStatic(const std::string& alias, R*&& res, Args && ...args) {
-		InvokeMember(alias, res, std::forward<Args>(args)...);
+		for (auto t : methodInstance) {
+			if (t->dscp.alias == alias && !t->dscp.isMember) {
+				SharedObject* temp = this;
+				t->InvokeStatic(res, std::forward<Args>(args)...);
+				return;
+			}
+		}
+		throw std::exception{"bad invoke"};
 	}
 
 	template<typename R, typename ...Args>
@@ -797,7 +892,7 @@ namespace LuRef {
 		if (rels.find(STypeID<T>::hashID) != rels.end())
 			return;
 		rels.emplace(STypeID<T>::hashID,
-			std::shared_ptr<Relationship>{new Relationship{ STypeID<T>::hashID }}
+			std::shared_ptr<Relationship>{new Relationship{ STypeID<T>::hashID,STypeID<T>::strID }}
 		);
 	}
 	template<typename Base_, typename Derived_>
@@ -805,7 +900,7 @@ namespace LuRef {
 		using Base = std::decay_t<Base_>;
 		using Derived = std::decay_t<Derived_>;
 		if constexpr (!std::is_base_of_v<Base, Derived>) {
-			LU_LOG_WARN(STypeID<Base>::strID << "not base of" << STypeID<Derived>::strID);
+			LU_CORE_WARN_FL("{} not base of {}", STypeID<Base>::strID, STypeID<Derived>::strID);
 			return;
 		}
 		Register<Base>();
@@ -813,12 +908,13 @@ namespace LuRef {
 		auto itBase = rels.find(STypeID<Base>::hashID);
 		bool isExist = false;
 		for (auto t : itBase->second->subClass) {
-			if (t->hashID == STypeID<Base>::hashID)
+			if (t->hashID == STypeID<Derived_>::hashID)
 				isExist = true;
 		}
 		if (isExist)
 			return;
 		auto itSub = rels.find(STypeID<Derived>::hashID);
+		std::cout << STypeID<Derived>::strID << " " << STypeID<Base>::strID << std::endl;
 		itBase->second->subClass.push_back(itSub->second.get());
 		itSub->second->baseClass.push_back(itBase->second.get());
 		//保存指针转换函数

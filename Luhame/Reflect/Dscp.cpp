@@ -68,8 +68,36 @@ namespace LuRef {
 		return nullptr;
 	}
 
-    Relationship::Relationship(const size_t& hashID)
-        :hashID(hashID) {}
+    Relationship::Relationship(const size_t& hashID,std::string name)
+        :hashID(hashID) ,name(name){}
+
+    Object* Inheritance::Convert(Object* obj, const std::string& base){
+        const std::string& derived = obj->dscp.alias;
+        auto hashBase = ClassAlias::Find(base);
+        auto hashDerived = ClassAlias::Find(derived);
+        if (!hashBase || !hashDerived|| IsBaseOf(base, derived)) {
+			LU_CORE_ERROR_DS(("bad convert:" + base + " to " + derived).c_str());
+            return nullptr;
+        }
+        auto convertObj = Convert(obj->As<void>(), *hashBase, *hashDerived);
+        auto res = ClassManager::FindClass(*hashDerived)->MakeWithData(convertObj);
+        return res;
+    }
+
+    std::shared_ptr<SharedObject> Inheritance::Convert(std::shared_ptr<SharedObject> obj, const std::string& base) {
+        const std::string& derived = obj->dscp.alias;
+        auto hashBase = ClassAlias::Find(base);
+        auto hashDerived = ClassAlias::Find(derived);
+        if (!hashBase || !hashDerived || !IsBaseOf(base, derived)) {
+            LU_CORE_ERROR_DS(("bad convert:" + base + " to " + derived).c_str());
+            return nullptr;
+        }
+        auto convertObj = Convert(obj->As<void>(), *hashBase, *hashDerived);
+        auto res = ClassManager::FindClass(*hashDerived)->MakeSharedWithData(obj->objPtr);
+        return res;
+    }
+
+
 
     bool LuRef::Inheritance::IsBaseOf(const std::string& base, const std::string& sub) {
         auto derivedID = ClassAlias::Find(sub);
@@ -85,22 +113,21 @@ namespace LuRef {
         return IsBaseOf(*baseID, *derivedID);
     }
 
-    bool Inheritance::IsBaseOf(size_t type1, size_t type2) {
-        if (cache.find(hash(type1, type2)) != cache.end())
+    bool Inheritance::IsBaseOf(size_t base, size_t sub) {
+        if (base == sub)
             return true;
-        auto it1 = rels.find(type1);
-        auto it2 = rels.find(type2);
-        if (it1 == rels.end()) {
-            LU_LOG_WARN(*IDRegistry::NameOf(type1) << " not register to Inheritance");
+        if (cache.find(hash(base, sub)) != cache.end())
+            return true;
+        auto it1 = rels.find(base);
+        auto it2 = rels.find(sub);
+        if (it1 == rels.end()) 
             return false;
-        }
-        if (it2 == rels.end()) {
-            LU_LOG_WARN(*IDRegistry::NameOf(type2) << " not register to Inheritance");
+        if (it2 == rels.end()) 
             return false;
-        }
-        if (TraversalToBase(rels.find(type2)->second.get(), type1)) {
+        auto t = rels.find(sub)->second.get();
+        if (TraversalToBase(t, base)) {
             //将结果缓存
-            cache.emplace(type1 / type2, std::pair<size_t, size_t>{type1, type2});
+			cache.emplace(hash(base, sub), std::pair<size_t, size_t>{base, sub});
             return true;
         }
         return false;
@@ -115,7 +142,6 @@ namespace LuRef {
             return true;
         return IsBaseOf(type2, type1);
     }
-
     void* Inheritance::Convert(void* data, size_t base, size_t derived) {
         if (base == derived)
             return data;
@@ -160,11 +186,11 @@ namespace LuRef {
     {
         return std::optional<std::vector<const ClassDscp*>>();
     }
-    bool Inheritance::TraversalToBase(Relationship* ship, size_t hashID) {
-        if (ship->hashID == hashID)
+    bool Inheritance::TraversalToBase(Relationship* ship, size_t baseID) {
+        if (ship->hashID == baseID)
             return true;
         for (auto& t : ship->baseClass) {
-            if (TraversalToBase(t, hashID))
+            if (TraversalToBase(t, baseID))
                 return true;
         }
         return false;
@@ -198,6 +224,36 @@ namespace LuRef {
             methods.push_back(std::shared_ptr<Method>{t.second.Instantiate(data)});
         }
         std::shared_ptr<SharedObject> obj{new SharedObject{ *this,objPtr,std::move(fields),std::move(methods) }};
+        return obj;
+    }
+
+    std::shared_ptr<SharedObject> ClassDscp::MakeSharedWithData(std::shared_ptr<void> data) const {
+        void* objPtr = data.get();//需要保证内存的安全
+        std::vector<std::shared_ptr<Field>> fields;
+        for (const auto& t : fieldDscps) {
+            fields.push_back(std::shared_ptr<Field>{t.second.Instantiate(objPtr, type.hashID)});
+        }
+        std::vector<std::shared_ptr<Method>> methods;
+        for (const auto& t : methodsDscp) {
+            void* data = objPtr;
+            /*
+            *	是否重载
+            *		是->转换
+            *			是否转换成功
+            *				是->构造
+            *				否->报错+pass
+            *		否->不转换
+            */
+            if (t.second.needConvert) {
+                data = Inheritance::Convert(objPtr, t.second.classType->hashID, type.hashID);
+                if (data == nullptr) {
+                    LU_LOG_ERROR("error : convert error" << "[at " << __FILE__ << " line: " << __LINE__);
+                    continue;
+                }
+            }
+            methods.push_back(std::shared_ptr<Method>{t.second.Instantiate(data)});
+        }
+        std::shared_ptr<SharedObject> obj{new SharedObject{ *this,data,std::move(fields),std::move(methods) }};
         return obj;
     }
 

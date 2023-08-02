@@ -61,3 +61,16 @@
 	resolution ：先在Luhame中创建项目Yaml，在项目文件中拉取yaml-cpp的源码，
 				 包含文件后编译成lib，在luhame项目中包含Yaml的include文件
 				 ，并将生成的lib文件导入luhame中即可
+
+
+4 ：2023.7.9.11.45 ：挫败感，被一个宏给浪费了几个小时 ：Luahme ：LuLog.hpp
+	problem   : __VG_ARGS__出现错误
+
+	reason    ：如果用宏来封装一个函数，那么__VG_ARGS__最好单独放在函数里
+				不要配合其他一起放里面，比如__LINE__,__FILE__，要不然会出
+				现多一个逗号的问题，我是想在改进一下Log宏，让它包含文件号
+				和行号
+
+	resolution ：妥协了，当没有{}参数的时候增加一个NULLLOG参数
+
+				

@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="FileName.cpp">
+    <ClCompile Include="testRef.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Reflect\TypeID.h">
@@ -24,13 +24,7 @@
     <ClCompile Include="Reflect\TypeID.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Reflect\TypeInfo.h">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="Reflect\Dscp.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="Reflect\inheritance.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Reflect\Alias.cpp">
@@ -42,15 +36,30 @@
     <ClCompile Include="Reflect\Serialization.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="CCS\LuCcs.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="testCcs.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ImGuiWrapper\Drags.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ImGuiWrapper\ImGuiWindow.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ImGuiWrapper\ImGuiSearchBar.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ImGuiWrapper\ImGuiListBox.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Reflect\Util.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Reflect\Dscp.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="Reflect\inheritance.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Reflect\Alias.h">
@@ -60,6 +69,30 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Reflect\ClassBuilder.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Log\lulog.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="CCS\LuCcs.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="test_define.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGuiWrapper\Drags.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGuiWrapper\Core.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGuiWrapper\ImGuiWindow.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGuiWrapper\ImGuiSearchBar.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGuiWrapper\ImGuiListBox.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

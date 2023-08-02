@@ -39,6 +39,16 @@ vec:
           23:
             name: Subsub22
     k: 0
+  vecs:
+    - x: 0
+      y: 0
+      z: 0
+    - x: 1
+      y: 1
+      z: 1
+    - x: 2
+      y: 2
+      z: 2
 data_vec:
   x: 1
   y: 1
@@ -74,3 +84,13 @@ data_vec:
           47:
             name: Subsub46
     k: 0
+  vecs:
+    - x: 0
+      y: 0
+      z: 0
+    - x: 1
+      y: 1
+      z: 1
+    - x: 2
+      y: 2
+      z: 2
