@@ -6,7 +6,7 @@
 #include"Reflect/ClassBuilder.hpp"
 #include<fstream>
 
-#include"Log/lulog.hpp"
+#include"LuLog/lulog.hpp"
 #include"test_define.h"
 #include"imgui/imgui.h"
 #include"GLFW/glfw3.h"
@@ -17,7 +17,9 @@
 #include <d3d11.h>
 #include"ImGuiWrapper/Drags.h"
 #include"ImGuiWrapper/ImGuiSearchBar.h"
-
+#include"ImGuiWrapper/TextEditor_line.h"
+#include"ImGuiWrapper/DrapDropSource.h"
+#include"ImGuiWrapper/ImGuiColorTextEdit/TextEditor.h"
 
 bool CreateDeviceD3D(HWND hWnd);
 void CleanupDeviceD3D();
@@ -269,12 +271,18 @@ void Register() {
 			->PushField("y", &glm::vec3::y)
 			->PushField("z", &glm::vec3::z)
 			->PushStaticMethod("length", &glm::vec3::length)
-			->PushStaticMethod("construct", CreateGlmVec3::create);
+			->PushStaticMethod("construct", &CreateGlmVec3::create);
 	}
 }
 
+
+
 #include"Readme.cpp"
 void test1() {
+	auto t = []() {
+
+	};
+	using T = decltype(t);
 	auto obj = LuRef::ClassManager::FindClass("Vec")->MakeShared(1.0f, 1.0f);
 	auto data = obj->As<Vec>();
 	//≤‚ ‘øΩ±¥◊÷∂ŒµƒÕ®”√–‘
@@ -439,6 +447,74 @@ void test_6_() {
 	std::cin >> vec.x;
 }
 
+template<class T,class ...Args>
+void* constructor(Args&&... args) {
+	return new T{ std::forward<Args>(args)... };
+}
+
+void test_random() {
+
+	struct mesh_manage{
+		struct trangle {
+			glm::vec3 ps;
+		};
+		std::unordered_map <uint64_t, std::vector<trangle>> ts;
+
+		auto* get_mesh(uint64_t id) {
+			return &ts[id];
+		}
+		uint64_t push_mesh(std::vector<trangle>& t) {
+			static uint64_t id = 0;
+			ts.emplace(id++, t);
+			return id;
+		}
+	};
+	{
+		LuRef::ClassBuilder<mesh_manage::trangle> b{"mesh_manage::trangle", true};
+		b.PushField("ps", &mesh_manage::trangle::ps)
+			->PushStaticMethod("construct",
+				constructor<mesh_manage::trangle, glm::vec3>);
+	}
+	{
+		LuRef::ClassBuilder<mesh_manage> b{"mesh_manage", true};
+		b.PushField("ts", &mesh_manage::ts)
+			->PushMethod("get_mesh",&mesh_manage::get_mesh)
+			->PushMethod("push_mesh",&mesh_manage::push_mesh)
+			->PushStaticMethod("construct",
+				constructor<mesh_manage>);
+	}
+	auto mesh_manager = LuRef::ClassManager::FindClass("mesh_manage")->MakeShared();
+	for (int i = 0; i < 10; i++) {
+		std::vector<mesh_manage::trangle> t;
+		for (int i = 0; i < 9; i++) {
+			t.push_back(
+				mesh_manage::trangle{
+				glm::vec3{ float(rand()), float(rand()), float(rand()) }
+			}
+			);
+		}
+		uint64_t ans;
+		mesh_manager->InvokeMember("push_mesh", &ans, std::ref(t).get());
+	}
+	for (int i = 0; i < 10; i++) {
+		std::vector<mesh_manage::trangle>* t = nullptr;
+		for (int i = 0; i < 10; i++) {
+			mesh_manager->InvokeMember("get_mesh", t, uint64_t(i));
+			for (auto& trangle : *t) {
+				LU_CORE_INFO("t:{0},{1},{2}", trangle.ps.x, trangle.ps.y, trangle.ps.z);
+			}
+		}
+	}
+	YAML::Node node;
+	auto data_node = node["mesh"];
+	LuRef::SerializationManager::Serialize(data_node, *mesh_manager.get());
+	std::ofstream os("./mesh.yaml");
+	YAML::Emitter emt;
+	emt << node;
+	os << emt.c_str();
+	os.close();
+}
+
 
 class test_frame {
 #define Def inline static
@@ -448,6 +524,11 @@ class test_frame {
 	Def glm::vec3 vecs[4];
 	Def std::shared_ptr<ImGuiWrapper::drag_vec<float, 3>> be_searchs[4];
 	Def ImGuiWrapper::ImGuiSearchBar search_bar{"search vec"};
+	Def ImGuiWrapper::DrapDropSource<char*> drag_char;
+	Def ImGuiWrapper::DrapDropTarget<char*> drog_char;
+
+	Def std::shared_ptr<ImGuiWrapper::TextEditor<char>> text_editor;
+
 	Def ImGuiWrapper::ImGuiWindow window{"test"};
 	Def glm::vec3 vec{0, 0, 0};
 	Def ID3D11Device* g_pd3dDevice = nullptr;
@@ -456,6 +537,7 @@ class test_frame {
 	Def ID3D11RenderTargetView* g_mainRenderTargetView = nullptr;
 
 
+	Def TextEditor te;
 
 #undef Def
 public:
@@ -616,6 +698,8 @@ public:
 	}
 
 	static void init() {
+		te.SetLanguageDefinition(TextEditor::LanguageDefinition::CPlusPlus());
+		
 		drag_bar_3.push_vec(&vec.x);
 		drag_bar_5.push_vec(lab_num);
 		for (int i = 0; i < 4; i++) {
@@ -626,19 +710,28 @@ public:
 		search_bar.push_kv("cherno", be_searchs[1]);
 		search_bar.push_kv("CCS", be_searchs[2]);
 		search_bar.push_kv("Reflect", be_searchs[3]);
+
+		text_editor.reset(
+			new ImGuiWrapper::TextEditor<char>{
+				"test text editor",10,{500,100}
+			}
+		);
+		text_editor->load("output.yaml");
+
 		window.push_component(std::shared_ptr<ImGuiWrapper::Component>{&drag_bar_3});
 		window.push_component(std::shared_ptr<ImGuiWrapper::Component>{&drag_bar_5});
 		window.push_component(std::shared_ptr<ImGuiWrapper::Component>{&search_bar});
+		window.push_component(text_editor);
 	}
 	static void test_7() {
 		window.update();
+		ImGui::Begin("color text editor");
+		te.Render("edit");
+		ImGui::End();
 	}
 };
 
 //≤‚ ‘Õº–Œ
-
-
-
 void set_function_for_imgui() {
 
 }
@@ -652,10 +745,8 @@ int main() {
 	Vec(Vec:: * ptr)(int) = &Vec::normal;
 	Register();
 	Register__();
-	test_frame::test_frame_for_Imgui();
+	//test_frame::test_frame_for_Imgui();
+	test_random();
 	return 0;
 }
 #endif // test_ref
-
-
-

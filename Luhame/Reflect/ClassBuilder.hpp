@@ -1,5 +1,5 @@
 #pragma once
-#include"Log/lulog.hpp"
+#include"LuLog/lulog.hpp"
 #include"Dscp.h"
 #include"Serialization.h"
 namespace LuRef {
@@ -130,6 +130,7 @@ namespace LuRef {
 			//导入方法
 			for (auto& t : dscp->methodsDscp) {
 				if (t.second.alias == "construct" && !t.second.isMember) {
+					//静态函数不需要对象，所以传入nullptr
 					dscp->constructor.reset(t.second.Instantiate(nullptr));
 				}
 				MethodDscpFlyWeight::PushMethod(alias, t.second.alias,

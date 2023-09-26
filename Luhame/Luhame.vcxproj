@@ -140,6 +140,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CCS\LuCcs.cpp" />
+    <ClCompile Include="ImGuiWrapper\DrapDropSource.cpp" />
+    <ClCompile Include="ImGuiWrapper\ImGuiColorTextEdit\TextEditor.cpp" />
     <ClCompile Include="ImGuiWrapper\ImGuiListBox.cpp" />
     <ClCompile Include="ImGuiWrapper\ImGuiSearchBar.cpp" />
     <ClCompile Include="ImGuiWrapper\ImGuiWindow.cpp" />
@@ -152,21 +154,25 @@
     <ClCompile Include="Reflect\TypeID.cpp" />
     <ClCompile Include="Reflect\TypeID.h" />
     <ClCompile Include="Reflect\Serialization.cpp" />
+    <ClCompile Include="ImGuiWrapper\TextEditor_line.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CCS\LuCcs.h" />
+    <ClInclude Include="ImGuiWrapper\DrapDropSource.h" />
+    <ClInclude Include="ImGuiWrapper\ImGuiColorTextEdit\TextEditor.h" />
     <ClInclude Include="ImGuiWrapper\ImGuiListBox.h" />
     <ClInclude Include="ImGuiWrapper\ImGuiSearchBar.h" />
     <ClInclude Include="ImGuiWrapper\ImGuiWindow.h" />
     <ClInclude Include="ImGuiWrapper\Core.h" />
     <ClInclude Include="ImGuiWrapper\Drags.h" />
-    <ClInclude Include="Log\lulog.hpp" />
+    <ClInclude Include="LuLog\lulog.hpp" />
     <ClInclude Include="Reflect\Alias.h" />
     <ClInclude Include="Reflect\ClassBuilder.hpp" />
     <ClInclude Include="Reflect\Dscp.h" />
     <ClInclude Include="Reflect\Util.hpp" />
     <ClInclude Include="Reflect\Serialization.h" />
     <ClInclude Include="test_define.h" />
+    <ClInclude Include="ImGuiWrapper\TextEditor_line.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="log.txt" />

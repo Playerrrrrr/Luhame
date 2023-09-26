@@ -84,6 +84,7 @@ namespace LuRef {
         return res;
     }
 
+    
     std::shared_ptr<SharedObject> Inheritance::Convert(std::shared_ptr<SharedObject> obj, const std::string& base) {
         const std::string& derived = obj->dscp.alias;
         auto hashBase = ClassAlias::Find(base);

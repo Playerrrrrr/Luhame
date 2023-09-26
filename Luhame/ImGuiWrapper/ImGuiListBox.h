@@ -5,6 +5,7 @@
 #include<vector>
 #include<functional>
 namespace ImGuiWrapper {
+
 	class ImGuiListBox :public Component {
 	public:
 		using callback = std::function<void(const std::string&)>;

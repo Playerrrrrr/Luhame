@@ -73,4 +73,12 @@
 
 	resolution ：妥协了，当没有{}参数的时候增加一个NULLLOG参数
 
-				
+5 ：2023.8.10.12.13 ：靠，完了这边有一个工作日志：luhame：Dscp.h
+	problem    ：反射的方法调用是将参数的类型检测放到运行时，是因为之前没有
+			     开法反射的经验才做出幼稚之举。
+	
+	reason     ：借鉴了std::thread的传参方式
+
+	resolution ：用一个静态函数invoke替代func，把类型参数传递给invoke，这样就
+			 可以在编译期进行完备的类型检查，参考std::thread的实现
+			 

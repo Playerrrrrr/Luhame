@@ -54,6 +54,15 @@
     <ClCompile Include="ImGuiWrapper\ImGuiListBox.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="ImGuiWrapper\DrapDropSource.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ImGuiWrapper\TextEditor_line.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ImGuiWrapper\ImGuiColorTextEdit\TextEditor.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Reflect\Util.hpp">
@@ -69,9 +78,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Reflect\ClassBuilder.hpp">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="Log\lulog.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="CCS\LuCcs.h">
@@ -93,6 +99,18 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="ImGuiWrapper\ImGuiListBox.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="LuLog\lulog.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGuiWrapper\DrapDropSource.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGuiWrapper\TextEditor_line.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGuiWrapper\ImGuiColorTextEdit\TextEditor.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

@@ -6,7 +6,7 @@
 #include<functional>
 #include"Alias.h"
 #include<queue>
-#include"Log/lulog.hpp"
+#include"LuLog/lulog.hpp"
 namespace LuRef {
 	class Field;
 	class SharedObject;
@@ -88,11 +88,13 @@ namespace LuRef {
 
 		friend class ClassDscp;
 	public:
-		void* data = nullptr;
+		void* data = nullptr;//调用类的实例
 		std::function<void(void*&, void*)> func;
 		std::function<void(void*)> voidRFunc;
 		const MethDscp& dscp;
+	private:
 	};
+
 
 	class MethodDscpFlyWeight {
 	public:
@@ -430,10 +432,16 @@ namespace LuRef {
 		//注意，这边的原则是如果类在继承树中，那么可以看是否转型，如果不在如float，那么就看hashID是否相同
 		static bool CanConvert(const std::string& derived, const std::string& base);
 		static bool CanConvert(size_t derived, size_t base);
+
+
+		//浅拷贝
 		//将指向derived类型的指针data，安全转换为data，如果失败，return nullptr
 		static void* Convert(void* data,size_t base, size_t derived);
 		static Object* Convert(Object*, const std::string& base);
 		static std::shared_ptr<SharedObject> Convert(std::shared_ptr<SharedObject>, const std::string& base);
+
+
+
 		static std::optional<std::vector<const ClassDscp*>> FindBaseClass(size_t);
 		static std::optional<std::vector<const ClassDscp*>> FindBaseClass(const std::string&);
 		static std::optional<std::vector<const ClassDscp*>> FindDerivedClass(size_t);
@@ -623,7 +631,7 @@ namespace LuRef {
 				using para_type_list = std::tuple<C*, Args&&...>;
 				para_type_list&& paraList = std::move(*reinterpret_cast<para_type_list*>(paras));
 
-				if constexpr (!std::is_pointer_v<R>|| res != nullptr) {
+				if constexpr (!std::is_pointer_v<R>) {
 					if (res != nullptr)
 						new (reinterpret_cast<R*>(res)) R{
 							std::apply(funptr, std::forward<decltype(paraList)>(paraList))
@@ -675,7 +683,7 @@ namespace LuRef {
 			};
 		}
 	}
-
+	//这边有一个优化，用一个静态函数invoke替代func，把类型参数传递给invoke，这样就可以在编译期进行完备的类型检查，参考std::thread的实现
 	template<typename C, typename R, typename ...Args>
 	inline void Method::InvokeWithCallable(C*& obj, R*& res, Args && ...args)
 	{

@@ -1,6 +1,6 @@
 #include"CCS/LuCcs.h"
 #include"test_define.h"
-#include"Log/lulog.hpp"
+#include"LuLog/lulog.hpp"
 LuCcs::registry reg;
 namespace Test_CCS {
 	struct vec2 {
@@ -16,6 +16,8 @@ namespace Test_CCS {
 			for (auto [x, y] : points) {
 				LU_CORE_INFO("x:{},y{}", x, y);
 			}
+			std::stringstream sst;
+
 		}
 	};
 	using namespace LuCcs;

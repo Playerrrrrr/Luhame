@@ -1,5 +1,5 @@
 #include "ImGuiSearchBar.h"
-#include"Log/lulog.hpp"
+#include"LuLog/lulog.hpp"
 namespace ImGuiWrapper {
 	ImGuiSearchBar::ImGuiSearchBar(const std::string& title)
 		:title(title),list_box("##") {
@@ -21,7 +21,6 @@ namespace ImGuiWrapper {
 			list_box.sort(cmp);
 			return 1;
 		};
-
 		//选择选项时的回调
 		std::function<void(const std::string&)> callback_on_select =
 			[this](const std::string& str)mutable {
